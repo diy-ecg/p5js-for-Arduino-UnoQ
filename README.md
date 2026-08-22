@@ -298,13 +298,13 @@ Everything downstream of that doesn't need it.
 **Frontend — in the browser, same machine:**
 
 1. Open the preinstalled Chromium browser on the UNO Q and go to the
-   shared project (Example 2 above; its `sketch.js` there is this repo's
-   `p5js/dac-adc-demo.js`): https://editor.p5js.org/diy-ecg/full/SzSsXanI7
+   shared project — it mirrors this repo's `p5js/` folder exactly,
+   including both demo files: https://editor.p5js.org/diy-ecg/full/cM1nGSgLc
 2. Fork it into your own p5.js account (top-right in the editor), so you
    get your own editable copy with all the framework files already in
-   place. For the Blink example instead, replace the forked project's
-   `sketch.js` with `p5js/blink_demo.js`'s contents — same fork, same
-   backend, no separate setup.
+   place. Blink runs by default, matching Example 1; to run the DAC/ADC
+   example instead, comment/uncomment the two `<script>` tags in
+   `index.html` as described in Example 2 above.
 3. Hit run. The first time a sketch tries to reach the backend, Chromium
    shows a one-time button asking you to explicitly allow access to the
    local network — click it. From then on the sketch connects to
