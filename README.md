@@ -97,11 +97,12 @@ project's entry point is conventionally called `sketch.js`, but nothing
 actually requires that name — what matters is that `index.html`'s
 `<script>` tag points to it. This repo keeps each example in its own
 descriptively-named file instead (`blink_demo.js` here, `dac-adc-demo.js`
-for Example 2), so both coexist without overwriting each other; this
-repo's own `p5js/index.html` points to `dac-adc-demo.js`. To run this
-example instead, upload `blink_demo.js` and point your project's
-`index.html` at it (or start a separate project with just this file,
-`digital_io.js`, and `transport.js`).
+for Example 2), so both coexist without overwriting each other.
+`p5js/index.html` in this repo has both wired in as `<script>` tags, with
+`blink_demo.js` active and `dac-adc-demo.js` commented out — this is the
+default, so this example runs as-is (or start a separate project with
+just this file, `digital_io.js`, and `transport.js`, if you'd rather not
+touch `index.html` at all).
 
 ## Example 2: DAC/ADC
 
@@ -150,10 +151,12 @@ being written into the buffer, not just `draw()`) — that variable has to
 exist in your sketch even if you never call `togglePause()`.
 
 Below is the exact, current content of this repo's `p5js/dac-adc-demo.js`
-— this example's file, per the naming note above: A0 outputs a 3 Hz
-square wave, split with a branched cable into both A2 and A3, so channel
-2 shows it raw and channel 3 shows the exact same signal through a
-lowpass you can toggle on and off live.
+— this example's file, per the naming note above. To run it instead of
+the default Blink, swap the two comments in `p5js/index.html`: comment
+out the `blink_demo.js` line and uncomment the `dac-adc-demo.js` one. A0
+outputs a 3 Hz square wave, split with a branched cable into both A2 and
+A3, so channel 2 shows it raw and channel 3 shows the exact same signal
+through a lowpass you can toggle on and off live.
 
 ```js
 "use strict";

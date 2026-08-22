@@ -17,11 +17,11 @@ actually working around.
 
 1. Create a new project on `editor.p5js.org` under your own account.
 2. Use "Add File" in the file panel to upload the files in this folder
-   (file picker or drag & drop) — `dac-adc-demo.js` can replace the
-   editor's own auto-created default `sketch.js`. Either rename the
-   uploaded file to `sketch.js`, or update `index.html`'s `<script>` tag
-   to point at `dac-adc-demo.js` instead (this folder's own `index.html`
-   already does the latter).
+   (file picker or drag & drop). This folder's `index.html` already wires
+   up both demo files as `<script>` tags — `blink_demo.js` active,
+   `dac-adc-demo.js` commented out. Comment/uncomment to pick which one
+   runs, or rename whichever one you want to `sketch.js` to replace the
+   editor's own auto-created default entirely.
 3. **Important:** the Socket.IO client library isn't bundled by default in
    a p5.js Web Editor project. The project's `index.html` needs an extra
    `<script>` tag *before* the other `.js` files:
@@ -61,9 +61,10 @@ actually working around.
   files was added via "Upload File" instead of "Create File". Upload is
   meant for assets (images, data) and does **not** automatically add the
   file as a `<script>` tag in `index.html`. Fix: check `index.html` for an
-  actual `<script src="...">` line for all six `.js` files (plus the
-  Socket.IO CDN tag) — otherwise the file shows up in the project but is
-  never actually executed.
+  actual, uncommented `<script src="...">` line for the 5 framework files
+  plus whichever demo file you intend to run (plus the Socket.IO CDN tag)
+  — otherwise the file shows up in the project but is never actually
+  executed.
 - **`Cross-Origin Request Blocked` / "CORS request did not succeed", status
   code `(null)`** — even though the server is reachable (a direct request
   to `http://127.0.0.1:7000/socket.io/?EIO=4&transport=polling` in a
