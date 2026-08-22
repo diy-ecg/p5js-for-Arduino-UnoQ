@@ -57,11 +57,10 @@ it's going back to roughly where a lot of this started.
 ## Example 1: Blink over digital I/O
 
 The simplest possible version of the pattern: `digitalWrite`/
-`digitalRead` as one-shot RPC calls (`p5js/digital_io.js`), no streaming,
-no buffering. `pin` is a normal Arduino digital pin number D0–D21, not one
-of the A0–A5 indices the oscilloscope example below uses. `digitalRead()`
-enables the pin's internal pull-up, so a button wired pin-to-GND needs no
-external resistor — same as on a classic Arduino.
+`digitalRead` as one-shot RPC calls (`p5js/digital_io.js`). `pin` is a
+normal Arduino digital pin number, D0–D21. `digitalRead()` enables the
+pin's internal pull-up, so a button wired pin-to-GND needs no external
+resistor — same as on a classic Arduino.
 
 Enough for the classic Blink, no recompiling needed to change the blink
 rate. Wire an LED with a series resistor between the pin and GND — the
