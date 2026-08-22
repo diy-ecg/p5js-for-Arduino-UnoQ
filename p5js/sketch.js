@@ -18,7 +18,7 @@ let paused = false;
 async function setup() {
   createCanvas(800, 600);
   frameRate(TARGET_FPS);
-  connectAdcBackend();
+  connectBackend();
 
   adc = await setupADC({ channels: [2, 3], bufferSize: BUFFER_SIZE });
   await setupDAC(0, { type: "square", freqHz: SQUARE_HZ, amplitude: 1.0 });

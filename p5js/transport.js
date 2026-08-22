@@ -34,22 +34,22 @@
  * default in a new p5.js Web Editor project.
  */
 
-const ADC_BACKEND_URL = "http://127.0.0.1:7000";
+const BACKEND_URL = "http://127.0.0.1:7000";
 
 let socket;
 let baseT0 = null; // session-wide time anchor, used to build a consistent relative time axis
 let lastMeta = null; // latest {status, last_count, sampling_rate_hz}, if a sketch wants to show it
 
-function connectAdcBackend() {
+function connectBackend() {
   // Force WebSocket only, skipping Engine.IO's usual polling handshake.
   // The polling transport is a plain XHR request, which hit a browser
   // cross-origin block that a raw WebSocket connection may not (see the
   // concept doc's "p5.js Web Editor as the live-coding target" section
   // for the diagnosis history) -- if this still fails, the problem is
   // broader than the polling transport specifically.
-  socket = io(ADC_BACKEND_URL, { transports: ["websocket"] });
+  socket = io(BACKEND_URL, { transports: ["websocket"] });
 
-  socket.on("connect", () => console.log("[transport] connected to", ADC_BACKEND_URL));
+  socket.on("connect", () => console.log("[transport] connected to", BACKEND_URL));
   socket.on("disconnect", () => {
     console.log("[transport] disconnected");
     baseT0 = null;

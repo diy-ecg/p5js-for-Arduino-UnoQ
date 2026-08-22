@@ -171,7 +171,7 @@ let paused = false;   // attachFilter() below expects this to exist, even if you
 
 async function setup() {
   createCanvas(800, 400);
-  connectAdcBackend();
+  connectBackend();
   adc = await setupADC({ channels: [2], bufferSize: 400 });
   attachFilter(adc[2]);   // no filter chain given -- raw values go straight into the buffer
 }
@@ -271,7 +271,7 @@ let ledOn = false;
 
 function setup() {
   createCanvas(200, 200);
-  connectAdcBackend();
+  connectBackend();
 }
 
 function draw() {
@@ -280,20 +280,12 @@ function draw() {
     digitalWrite(13, ledOn);
     lastToggle = millis();
   }
-
-  background(255);
-  noStroke();
-  fill(ledOn ? "red" : 220);
-  circle(width / 2, height / 2, 80);
 }
 ```
 
-The circle is just a screen mirror of the physical LED's state — not
-required for `digitalWrite()` to work, but a nice way to see the blink
-even without the board in view. `digitalWrite()`/`digitalRead()` both
-return promises (like `setupDAC()`), so `await` them if you need to know
-the call actually completed — the snippet above fires and forgets, which
-is fine for a blink.
+`digitalWrite()`/`digitalRead()` both return promises (like `setupDAC()`),
+so `await` them if you need to know the call actually completed — the
+snippet above fires and forgets, which is fine for a blink.
 
 `p5js/README.md` has the exact steps for getting these files into your own
 p5.js Web Editor project, in case you're not starting from the shared link

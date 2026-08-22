@@ -46,7 +46,7 @@ actually working around.
    sketch from then on.
 3. The Python/MCU side needs to already be running on the UNO Q
    (`arduino-app-cli app start .` in the backend project's folder) before
-   you hit run in the Web Editor — otherwise `connectAdcBackend()` is
+   you hit run in the Web Editor — otherwise `connectBackend()` is
    trying to reach a server that isn't there yet.
 4. For experimenting, only touch `sketch.js` (filter settings, which
    channels are active, DAC waveform, digital I/O, visualization). The
@@ -54,7 +54,7 @@ actually working around.
 
 ## Troubleshooting (hit while setting this up the first time)
 
-- **`ReferenceError: connectAdcBackend is not defined`** — one of the
+- **`ReferenceError: connectBackend is not defined`** — one of the
   files was added via "Upload File" instead of "Create File". Upload is
   meant for assets (images, data) and does **not** automatically add the
   file as a `<script>` tag in `index.html`. Fix: check `index.html` for an
@@ -68,7 +68,7 @@ actually working around.
   hostname `localhost` instead of the loopback IP `127.0.0.1`. Browsers'
   mixed-content/local-network exemption for cross-origin requests to a
   loopback address is reliably granted for the literal IP, not guaranteed
-  for the name `localhost`. Fix: set `ADC_BACKEND_URL` in `transport.js` to
+  for the name `localhost`. Fix: set `BACKEND_URL` in `transport.js` to
   `http://127.0.0.1:7000` (already the case in this folder) — **fixes this
   particular symptom, but see the next point: that alone wasn't actually
   enough in practice.**

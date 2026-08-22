@@ -9,7 +9,7 @@
  * there is no code path by which two channels' state could mix.
  *
  * Classic (non-module) script: shares the top-level scope with the other
- * files. `socket` comes from transport.js -- connectAdcBackend() must run
+ * files. `socket` comes from transport.js -- connectBackend() must run
  * before setupADC()/setupDAC() are called. `RingBuffer` comes from
  * ring_buffer.js.
  */

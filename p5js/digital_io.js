@@ -6,7 +6,7 @@
  * LED), not one of the A0..A5 indices used elsewhere.
  *
  * Same one-shot RPC shape as setupDAC()/dacOff() -- socket comes from
- * transport.js; connectAdcBackend() must run before either of these.
+ * transport.js; connectBackend() must run before either of these.
  */
 
 function digitalWrite(pin, value) {
