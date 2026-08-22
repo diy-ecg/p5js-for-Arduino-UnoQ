@@ -90,10 +90,17 @@ function draw() {
 `digitalWrite()`/`digitalRead()` both return promises, so `await` them if
 you need to know the call actually completed — the snippet above fires
 and forgets, which is fine for a blink. This exact code is also a real
-file, `p5js/blink_demo.js` — since a p5.js Web Editor project only runs
-one `sketch.js`, swap this in for whichever sketch.js content is
-currently active (or start a separate project with just this file,
-`digital_io.js`, and `transport.js`) to run it.
+file in this repo, `p5js/blink_demo.js`.
+
+A quick naming note, since it comes up for both examples: in the p5.js
+Web Editor, the file holding `setup()`/`draw()` is conventionally just
+called `sketch.js` — a project only ever runs one. This repo keeps Example
+1's and Example 2's content in two separate files (`blink_demo.js` and
+`sketch.js`, respectively) so neither overwrites the other on disk, but
+only one of them is ever actually your project's `sketch.js` at a time. To
+run this example, copy `blink_demo.js`'s content into your project's
+`sketch.js` (or start a separate project with just this file,
+`digital_io.js`, and `transport.js`).
 
 ## Example 2: DAC/ADC
 
@@ -141,11 +148,11 @@ variable on every incoming batch (so pausing also stops new data from
 being written into the buffer, not just `draw()`) — that variable has to
 exist in your sketch even if you never call `togglePause()`.
 
-Below is the exact, current content of this repo's `p5js/sketch.js` — the
-file this DAC/ADC example ships as (not `blink_demo.js` from Example 1):
-A0 outputs a 3 Hz square wave, split with a branched cable into both A2
-and A3, so channel 2 shows it raw and channel 3 shows the exact same
-signal through a lowpass you can toggle on and off live.
+Below is the exact, current content of this repo's `p5js/sketch.js` —
+this example's file, per the naming note above: A0 outputs a 3 Hz square
+wave, split with a branched cable into both A2 and A3, so channel 2 shows
+it raw and channel 3 shows the exact same signal through a lowpass you can
+toggle on and off live.
 
 ```js
 "use strict";
