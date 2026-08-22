@@ -1,9 +1,11 @@
-# Uno Q Scope for p5.js
+# p5.js for Arduino Uno Q
 
-A four-channel oscilloscope for the Arduino UNO Q, split into a stable
-backend and an interactive frontend, so you don't have to recompile an
-Arduino App every time you want to change how your data gets filtered or
-plotted.
+A pattern for building UNO Q apps: a small, stable Arduino App as the
+backend, and a p5.js sketch you live-code in the browser as the frontend —
+so you don't have to recompile and restart the whole app every time you
+want to change what your code actually does. Two working examples are
+included: a 4-channel oscilloscope (ADC/DAC) and a Blink demo (digital
+I/O).
 
 ## The problem this solves
 
@@ -53,7 +55,7 @@ live-coding, fast-iteration half of this project in p5.js instead of in the
 Arduino IDE itself isn't just a convenient choice of frontend technology —
 it's going back to roughly where a lot of this started.
 
-## What you actually get
+## Example 1: a 4-channel oscilloscope
 
 Out of the box: a 4-channel scope. Pick any subset of A0–A5 (up to four at
 once) as ADC inputs, optionally drive a fixed sine/square/triangle wave out
