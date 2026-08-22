@@ -42,9 +42,8 @@ recompiling the MCU sketch, no restarting the backend. That's the
 The backend doesn't know or care what happens to the data once it leaves
 the board — it just relays raw values back and forth. All the actual
 behavior — what a blink pattern looks like, channel selection, filtering,
-R-peak/BPM detection, plotting, CSV export — lives entirely on the p5.js
-side, in code you're expected to read and rewrite, not a black box you
-configure.
+plotting, CSV export — lives entirely on the p5.js side, in code you're
+expected to read and rewrite, not a black box you configure.
 
 ## A small circle closes here
 
@@ -97,16 +96,15 @@ one `sketch.js`, swap this in for whichever sketch.js content is
 currently active (or start a separate project with just this file,
 `digital_io.js`, and `transport.js`) to run it.
 
-## Example 2: a 4-channel oscilloscope
+## Example 2: DAC/ADC
 
 Out of the box: a 4-channel scope. Pick any subset of A0–A5 (up to four at
 once) as ADC inputs, optionally drive a fixed sine/square/triangle wave out
 of A0/A1 through the two onboard DAC channels, and — independently, per ADC
 channel:
 
-- run it through its own filter chain (highpass / lowpass / notch, or the
-  adaptive R-peak/BPM detector originally written for a DIY-ECG project —
-  or nothing at all),
+- run it through its own filter chain (highpass / lowpass / notch, or
+  nothing at all),
 - toggle individual filter stages on and off live, from checkboxes in the
   browser,
 - plot it, or send it to a scrolling text log instead of a plot,
@@ -257,11 +255,113 @@ function plotChannel(points, index, total) {
 That's a complete, working single-channel scope — genuinely copy-pasteable
 as it stands, nothing left implicit. Everything else — more channels,
 filter chains, checkboxes to toggle them, CSV export — builds on exactly
-this shape. See `p5js/sketch.js` in this repo for a fuller, self-contained
-demo: A0 outputs a 3 Hz square wave, split with a branched cable into both
-A2 and A3, so channel 2 shows it raw and channel 3 shows the exact same
-signal through a lowpass you can toggle on and off live — `plotChannel`
-there is the very same function, just called twice.
+this shape. Here's the fuller, self-contained demo this repo actually
+ships as `p5js/sketch.js`: A0 outputs a 3 Hz square wave, split with a
+branched cable into both A2 and A3, so channel 2 shows it raw and channel
+3 shows the exact same signal through a lowpass you can toggle on and off
+live — `plotChannel` there is the very same function, just called twice.
+
+```js
+"use strict";
+
+// Demo: A0 outputs a 3 Hz square wave -- split it with a branched cable
+// into both A2 and A3 so the ADC channels read the same signal. Channel 2
+// shows it raw; channel 3 shows it through a lowpass you can toggle
+// on/off live, to see it get smoothed.
+
+const ADC_RATE_HZ = 200; // must match sketch.ino's fixed sampling rate
+const BUFFER_SIZE = 800; // samples kept per channel (~4s at 200Hz)
+const SQUARE_HZ = 3;
+const LOWPASS_HZ = 8; // channel 3's filter cutoff
+const TARGET_FPS = 60; // frameRate() target; measured fps shown top-left
+
+let adc;
+let chain3;
+let paused = false;
+
+async function setup() {
+  createCanvas(800, 600);
+  frameRate(TARGET_FPS);
+  connectBackend();
+
+  adc = await setupADC({ channels: [2, 3], bufferSize: BUFFER_SIZE });
+  await setupDAC(0, { type: "square", freqHz: SQUARE_HZ, amplitude: 1.0 });
+
+  // Channel 2: raw, for comparison
+  attachFilter(adc[2]);
+  createButton("Save channel 2").mousePressed(() => saveChannelBuffer(2));
+
+  // Channel 3: same signal, through a toggleable lowpass
+  chain3 = new FilterChain().add(makeLowpass(LOWPASS_HZ, ADC_RATE_HZ));
+  attachFilter(adc[3], chain3);
+
+  const cb = createCheckbox(`Channel 3: lowpass @ ${LOWPASS_HZ}Hz`, chain3.stages[0].enabled);
+  cb.changed(() => (chain3.stages[0].enabled = cb.checked()));
+  createButton("Save channel 3").mousePressed(() => saveChannelBuffer(3));
+
+  createButton("Pause / Resume").mousePressed(togglePause);
+}
+
+function draw() {
+  background(255);
+  plotChannel(adc[2].buffer.toArray(), 0, 2);
+  plotChannel(adc[3].buffer.toArray(), 1, 2);
+
+  noStroke();
+  fill(0);
+  text(`${frameRate().toFixed(1)} fps`, 10, 14);
+}
+
+function togglePause() {
+  paused = !paused;
+  paused ? noLoop() : loop();
+}
+
+/* ==================== Visualization -- replace freely ==================== */
+
+// One band per channel, auto-scaled to the currently visible min/max.
+// A fixed gap between bands keeps neighboring channels from touching.
+const BAND_GAP = 10;
+
+function plotChannel(points, index, total) {
+  if (points.length < 2) return;
+  const bandHeight = height / total;
+  const yTop = index * bandHeight;
+  const yBottom = yTop + bandHeight - BAND_GAP;
+
+  const tMin = points[0].t,
+    tMax = points[points.length - 1].t;
+  let vMin = Infinity,
+    vMax = -Infinity;
+  points.forEach((p) => {
+    if (p.v < vMin) vMin = p.v;
+    if (p.v > vMax) vMax = p.v;
+  });
+  if (vMin === vMax) {
+    vMin -= 1;
+    vMax += 1;
+  }
+
+  noFill();
+  stroke(0);
+  beginShape();
+  points.forEach((p) => {
+    const x = map(p.t, tMin, tMax, 0, width);
+    const y = map(p.v, vMin, vMax, yBottom, yTop);
+    vertex(x, y);
+  });
+  endShape();
+}
+
+/* ==================== Buffer export ==================== */
+
+// Pause first, then save, so the file matches exactly what's on screen.
+function saveChannelBuffer(channelId) {
+  const points = adc[channelId].buffer.toArray();
+  const lines = points.map((p) => `${p.t},${p.v}`);
+  saveStrings(["t,value", ...lines], `channel_${channelId}_buffer`, "csv");
+}
+```
 
 ### Alternative to a plot: a scrolling text log
 
