@@ -53,7 +53,7 @@ actually working around.
    trying to reach a server that isn't there yet.
 4. For experimenting, only touch `dac-adc-demo.js` (filter settings,
    which channels are active, DAC waveform, digital I/O, visualization).
-   The other five files normally shouldn't need to change.
+   The other six files normally shouldn't need to change.
 
 ## Troubleshooting (hit while setting this up the first time)
 
