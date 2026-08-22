@@ -245,6 +245,36 @@ function plotChannel(points, index, total) {
 }
 ```
 
+## Summary
+
+Two examples, one small, consistent API on the frontend so far:
+
+- `connectBackend()` — connects to the backend over Socket.IO; call once
+  in `setup()`, before anything else.
+- `digitalWrite(pin, value)` / `digitalRead(pin)` — plain digital I/O,
+  one-shot RPC calls.
+- `setupADC({ channels, bufferSize })` — selects the active ADC channels
+  and returns `adc`, a map of `AdcChannel` objects.
+- `setupDAC(channel, { type, freqHz, amplitude })` / `dacOff(channel)` —
+  configure or turn off a fixed DAC waveform.
+- `attachFilter(channel, chain)` — subscribes a channel to its incoming
+  data, optionally running it through a `FilterChain` first, and writes
+  the result into `channel.buffer`.
+- `FilterChain`, plus `makeHighpass()` / `makeLowpass()` / `makeNotch()` /
+  `makeAdaptive()` — the building blocks for the `chain` argument above.
+- `adc[channel].buffer.toArray()` / `.last()` — read whatever a channel
+  currently has buffered, for `draw()` to plot or do anything else with.
+
+That's the whole surface right now, and it's deliberately small — this
+repo is a proof of concept for the pattern, not a finished product.
+Nothing about the split ties it to ADC/DAC or digital I/O specifically:
+adding another Arduino capability means the same three small pieces each
+time — a one-shot (or streaming) RPC handler in `sketch.ino`, a matching
+Socket.IO message in the Python relay, and a small wrapper function on
+the p5.js side, exactly like `digitalWrite()`/`digitalRead()` were added
+alongside the original ADC/DAC pair. I2C sensors, PWM, servos, whatever
+else the UNO Q can do — if there's interest, this can keep growing.
+
 ## Getting it running
 
 **Backend — on the UNO Q itself:**
