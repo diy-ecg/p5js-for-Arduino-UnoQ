@@ -268,12 +268,12 @@ Two examples, one small, consistent API on the frontend so far:
 That's the whole surface right now, and it's deliberately small — this
 repo is a proof of concept for the pattern, not a finished product.
 Nothing about the split ties it to ADC/DAC or digital I/O specifically:
-adding another Arduino capability means the same three small pieces each
-time — a one-shot (or streaming) RPC handler in `sketch.ino`, a matching
-Socket.IO message in the Python relay, and a small wrapper function on
-the p5.js side, exactly like `digitalWrite()`/`digitalRead()` were added
-alongside the original ADC/DAC pair. I2C sensors, PWM, servos, whatever
-else the UNO Q can do — if there's interest, this can keep growing.
+both examples follow the same recipe — a one-shot (or streaming) RPC
+handler in `sketch.ino`, a matching Socket.IO message in the Python
+relay, and a small wrapper function on the p5.js side — and any other
+Arduino capability could be added the same way. I2C sensors, PWM, servos,
+whatever else the UNO Q can do — if there's interest, this can keep
+growing.
 
 ## Getting it running
 
