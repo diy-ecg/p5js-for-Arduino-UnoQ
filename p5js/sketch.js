@@ -25,7 +25,6 @@ async function setup() {
 
   // Channel 2: raw, for comparison
   attachFilter(adc[2]);
-  createButton("Save channel 2").mousePressed(() => saveChannelBuffer(2));
 
   // Channel 3: same signal, through a toggleable lowpass
   chain3 = new FilterChain().add(makeLowpass(LOWPASS_HZ, ADC_RATE_HZ));
@@ -33,7 +32,6 @@ async function setup() {
 
   const cb = createCheckbox(`Channel 3: lowpass @ ${LOWPASS_HZ}Hz`, chain3.stages[0].enabled);
   cb.changed(() => (chain3.stages[0].enabled = cb.checked()));
-  createButton("Save channel 3").mousePressed(() => saveChannelBuffer(3));
 
   createButton("Pause / Resume").mousePressed(togglePause);
 }
@@ -87,13 +85,4 @@ function plotChannel(points, index, total) {
     vertex(x, y);
   });
   endShape();
-}
-
-/* ==================== Buffer export ==================== */
-
-// Pause first, then save, so the file matches exactly what's on screen.
-function saveChannelBuffer(channelId) {
-  const points = adc[channelId].buffer.toArray();
-  const lines = points.map((p) => `${p.t},${p.v}`);
-  saveStrings(["t,value", ...lines], `channel_${channelId}_buffer`, "csv");
 }

@@ -42,8 +42,8 @@ recompiling the MCU sketch, no restarting the backend. That's the
 The backend doesn't know or care what happens to the data once it leaves
 the board — it just relays raw values back and forth. All the actual
 behavior — what a blink pattern looks like, channel selection, filtering,
-plotting, CSV export — lives entirely on the p5.js side, in code you're
-expected to read and rewrite, not a black box you configure.
+plotting — lives entirely on the p5.js side, in code you're expected to
+read and rewrite, not a black box you configure.
 
 ## A small circle closes here
 
@@ -107,8 +107,7 @@ channel:
   nothing at all),
 - toggle individual filter stages on and off live, from checkboxes in the
   browser,
-- plot it, or send it to a scrolling text log instead of a plot,
-- pause it and export it to CSV.
+- plot it, and pause the whole sketch to freeze the view.
 
 None of that is fixed. `p5js/sketch.js` is a starting point meant to be
 read and edited, not a finished product handed to you.
@@ -120,146 +119,33 @@ not 200 total split across them) and a **fixed 14-bit ADC resolution**
 something you can change from `sketch.js` at runtime — changing either
 means re-flashing the backend.
 
-## Repository layout
+Two calls in `setup()` configure the hardware once and never need to run
+again. `setupADC({ channels, bufferSize })` tells the backend which ADC
+pins to sample and returns `adc`, a map from pin index to an `AdcChannel`
+object, each holding its own fixed-size ring buffer. `setupDAC(channel,
+{ type, freqHz, amplitude })` is the same idea for one DAC channel — a
+one-shot RPC call, not something you touch again afterward.
 
-```
-app.yaml, requirements.txt      backend  – Arduino App metadata
-sketch/sketch.ino, sketch.yaml  backend  – MCU sketch: ADC sampling, DAC
-                                            output, Bridge/RPC
-python/                         backend  – Linux-side relay: pulls frames
-                                            off Bridge/RPC, forwards them to
-                                            the browser over Socket.IO,
-                                            unmodified
-p5js/                           frontend – the p5.js sketch and its
-                                            supporting files
-```
+Neither call by itself gets samples into a buffer, though. That's
+`attachFilter(adc[channel], chain)` (from `filters.js`, also called once
+in `setup()`): it subscribes to that channel's incoming data, runs it
+through the given filter chain — or passes it through unchanged if no
+chain is given, as channel 2 does below — and pushes the result into
+`adc[channel].buffer`. `draw()` never touches the network or the filters
+directly; every frame, it just reads whatever's currently in
+`adc[channel].buffer.toArray()` and plots it — the buffer is kept up to
+date in the background by `attachFilter()`'s subscription, independent of
+how often `draw()` itself runs.
 
-The backend only ever moves bytes around; it has no idea what a "channel,"
-a "filter," or a "plot" is. All of that lives in `p5js/`.
+One easy-to-miss detail: `attachFilter()` also checks a top-level `paused`
+variable on every incoming batch (so pausing also stops new data from
+being written into the buffer, not just `draw()`) — that variable has to
+exist in your sketch even if you never call `togglePause()`.
 
-## License
-
-Two different licenses, split along the same backend/frontend line:
-
-- **Backend** (`app.yaml`, `requirements.txt`, `sketch/`, `python/`) —
-  [GPLv3](LICENSE). Same as the Linux kernel: commercial use is explicitly
-  fine, but anyone who distributes this code or a modified version of it
-  has to pass the source along under the same terms. GPLv3 specifically
-  (not v2) because the sketch links against Zephyr (Apache License 2.0),
-  and the FSF considers Apache 2.0 compatible with GPLv3 but not GPLv2.
-- **Frontend** (`p5js/`) — [MIT](p5js/LICENSE). Fork it, modify it, use it
-  commercially, no obligations beyond keeping the license notice.
-
-p5.js itself is LGPL-2.1 — since this project only loads it from a CDN
-rather than bundling or modifying it, that places no restriction on
-either license above.
-
-## Getting it running
-
-**Backend — on the UNO Q itself:**
-
-1. Download this repository as a ZIP from GitHub and unzip it on the UNO
-   Q's Linux desktop.
-2. Copy the unzipped folder into your Arduino App Lab apps directory — the
-   same place your other Arduino Apps live. It should now show up as an
-   app inside App Lab.
-3. Start it from App Lab. This compiles and flashes `sketch/sketch.ino` and
-   starts the Python relay, which listens on `http://127.0.0.1:7000`.
-
-You only need to repeat this whole step when you actually change something
-on the backend side (pin wiring, the RPC surface, the sampling rate).
-Everything downstream of that doesn't need it.
-
-**Frontend — in the browser, same machine:**
-
-1. Open the preinstalled Chromium browser on the UNO Q and go to the
-   shared project (the oscilloscope, Example 2 above):
-   https://editor.p5js.org/diy-ecg/full/SzSsXanI7
-2. Fork it into your own p5.js account (top-right in the editor), so you
-   get your own editable copy with all the framework files already in
-   place. For the Blink example instead, replace the forked project's
-   `sketch.js` with `p5js/blink_demo.js`'s contents — same fork, same
-   backend, no separate setup.
-3. Hit run. The first time a sketch tries to reach the backend, Chromium
-   shows a one-time button asking you to explicitly allow access to the
-   local network — click it. From then on the sketch connects to
-   `127.0.0.1:7000` automatically, and you should start seeing live data.
-
-This setup assumes the browser and the backend run on the same machine —
-tested on the UNO Q's own Linux desktop with the preinstalled Chromium.
-The p5.js sketch's preview runs on a different origin than your local
-backend and reaches it over a loopback address; the permission button
-above is exactly Chromium's check for that. Click "allow" once per sketch
-and it's done.
-
-From here on, all further iteration happens in the p5.js editor — edit,
-hit run, done. No App Lab involved.
-
-## Writing your own oscilloscope experiment: the simplest possible `sketch.js`
-
-The framework files (`adc_channel.js`, `ring_buffer.js`, `filters.js`,
-`transport.js`) handle the plumbing — connecting, decoding frames,
-demultiplexing by channel. `sketch.js` is the one file you're actually
-meant to read and rewrite, and at its smallest it only needs four moves:
-connect, pick a channel, hand its data to a buffer, plot the buffer. One
-easy-to-miss detail: `filters.js`'s `attachFilter()` checks a top-level
-`paused` variable on every incoming batch of samples (so pausing also
-stops new data from being written into the buffer, not just `draw()`) —
-that variable is expected to already exist in your sketch, even if you
-never actually pause anything, so it has to be declared up front.
-
-```js
-let adc;
-let paused = false;   // attachFilter() below expects this to exist, even if you never pause
-
-async function setup() {
-  createCanvas(800, 400);
-  connectBackend();
-  adc = await setupADC({ channels: [2], bufferSize: 400 });
-  attachFilter(adc[2]);   // no filter chain given -- raw values go straight into the buffer
-}
-
-function draw() {
-  background(255);
-  plotChannel(adc[2].buffer.toArray(), 0, 1);
-}
-
-// plotChannel isn't part of the framework files either -- it lives here,
-// in sketch.js, same as everything else above. One band per channel
-// (just one, in this case), auto-scaled to the currently visible min/max.
-function plotChannel(points, index, total) {
-  if (points.length < 2) return;
-  const bandHeight = height / total;
-  const yTop = index * bandHeight;
-
-  const tMin = points[0].t, tMax = points[points.length - 1].t;
-  let vMin = Infinity, vMax = -Infinity;
-  points.forEach((p) => {
-    if (p.v < vMin) vMin = p.v;
-    if (p.v > vMax) vMax = p.v;
-  });
-  if (vMin === vMax) { vMin -= 1; vMax += 1; }
-
-  noFill();
-  stroke(0);
-  beginShape();
-  points.forEach((p) => {
-    const x = map(p.t, tMin, tMax, 0, width);
-    const y = map(p.v, vMin, vMax, yTop + bandHeight, yTop);
-    vertex(x, y);
-  });
-  endShape();
-}
-```
-
-That's a complete, working single-channel scope — genuinely copy-pasteable
-as it stands, nothing left implicit. Everything else — more channels,
-filter chains, checkboxes to toggle them, CSV export — builds on exactly
-this shape. Here's the fuller, self-contained demo this repo actually
-ships as `p5js/sketch.js`: A0 outputs a 3 Hz square wave, split with a
-branched cable into both A2 and A3, so channel 2 shows it raw and channel
-3 shows the exact same signal through a lowpass you can toggle on and off
-live — `plotChannel` there is the very same function, just called twice.
+This is the complete, current `p5js/sketch.js`: A0 outputs a 3 Hz square
+wave, split with a branched cable into both A2 and A3, so channel 2 shows
+it raw and channel 3 shows the exact same signal through a lowpass you can
+toggle on and off live.
 
 ```js
 "use strict";
@@ -289,7 +175,6 @@ async function setup() {
 
   // Channel 2: raw, for comparison
   attachFilter(adc[2]);
-  createButton("Save channel 2").mousePressed(() => saveChannelBuffer(2));
 
   // Channel 3: same signal, through a toggleable lowpass
   chain3 = new FilterChain().add(makeLowpass(LOWPASS_HZ, ADC_RATE_HZ));
@@ -297,7 +182,6 @@ async function setup() {
 
   const cb = createCheckbox(`Channel 3: lowpass @ ${LOWPASS_HZ}Hz`, chain3.stages[0].enabled);
   cb.changed(() => (chain3.stages[0].enabled = cb.checked()));
-  createButton("Save channel 3").mousePressed(() => saveChannelBuffer(3));
 
   createButton("Pause / Resume").mousePressed(togglePause);
 }
@@ -352,55 +236,81 @@ function plotChannel(points, index, total) {
   });
   endShape();
 }
-
-/* ==================== Buffer export ==================== */
-
-// Pause first, then save, so the file matches exactly what's on screen.
-function saveChannelBuffer(channelId) {
-  const points = adc[channelId].buffer.toArray();
-  const lines = points.map((p) => `${p.t},${p.v}`);
-  saveStrings(["t,value", ...lines], `channel_${channelId}_buffer`, "csv");
-}
 ```
 
-### Alternative to a plot: a scrolling text log
+## Getting it running
 
-Modeled on the Arduino IDE's Serial Monitor — useful when a plot isn't
-needed, or as a quick "is data actually arriving" check. Not part of the
-demo in `p5js/sketch.js` (left out to keep it minimal), but a drop-in for
-any channel: call `textChannel(id)` from `draw()` instead of that
-channel's `plotChannel(...)` line.
+**Backend — on the UNO Q itself:**
 
-```js
-const textChannelLogs = {};
+1. Download this repository as a ZIP from GitHub and unzip it on the UNO
+   Q's Linux desktop.
+2. Copy the unzipped folder into your Arduino App Lab apps directory — the
+   same place your other Arduino Apps live. It should now show up as an
+   app inside App Lab.
+3. Start it from App Lab. This compiles and flashes `sketch/sketch.ino` and
+   starts the Python relay, which listens on `http://127.0.0.1:7000`.
 
-function textChannel(channelId) {
-  if (!textChannelLogs[channelId]) {
-    textChannelLogs[channelId] = {
-      box: createDiv("").style("height", "150px").style("overflow-y", "scroll"),
-      lines: [],
-      lastT: null,
-    };
-  }
-  const state = textChannelLogs[channelId];
+You only need to repeat this whole step when you actually change something
+on the backend side (pin wiring, the RPC surface, the sampling rate).
+Everything downstream of that doesn't need it.
 
-  const latest = adc[channelId].buffer.last();
-  if (!latest || latest.t === state.lastT) return; // nothing new since the last draw() call
-  state.lastT = latest.t;
+**Frontend — in the browser, same machine:**
 
-  state.lines.push(`t=${latest.t} ms  v=${latest.v.toFixed(1)}`);
-  if (state.lines.length > 20) state.lines.shift();
-  state.box.html(state.lines.join("<br>"));
-  state.box.elt.scrollTop = state.box.elt.scrollHeight;
-}
+1. Open the preinstalled Chromium browser on the UNO Q and go to the
+   shared project (the oscilloscope, Example 2 above):
+   https://editor.p5js.org/diy-ecg/full/SzSsXanI7
+2. Fork it into your own p5.js account (top-right in the editor), so you
+   get your own editable copy with all the framework files already in
+   place. For the Blink example instead, replace the forked project's
+   `sketch.js` with `p5js/blink_demo.js`'s contents — same fork, same
+   backend, no separate setup.
+3. Hit run. The first time a sketch tries to reach the backend, Chromium
+   shows a one-time button asking you to explicitly allow access to the
+   local network — click it. From then on the sketch connects to
+   `127.0.0.1:7000` automatically, and you should start seeing live data.
+
+This setup assumes the browser and the backend run on the same machine —
+tested on the UNO Q's own Linux desktop with the preinstalled Chromium.
+The p5.js sketch's preview runs on a different origin than your local
+backend and reaches it over a loopback address; the permission button
+above is exactly Chromium's check for that. Click "allow" once per sketch
+and it's done.
+
+From here on, all further iteration happens in the p5.js editor — edit,
+hit run, done. No App Lab involved. `p5js/README.md` has the exact steps
+for getting these files into your own p5.js Web Editor project, in case
+you're not starting from the shared link above.
+
+## Repository layout
+
+```
+app.yaml, requirements.txt      backend  – Arduino App metadata
+sketch/sketch.ino, sketch.yaml  backend  – MCU sketch: ADC sampling, DAC
+                                            output, Bridge/RPC
+python/                         backend  – Linux-side relay: pulls frames
+                                            off Bridge/RPC, forwards them to
+                                            the browser over Socket.IO,
+                                            unmodified
+p5js/                           frontend – the p5.js sketch and its
+                                            supporting files
 ```
 
-The box for a channel is created lazily, on the first call — a channel
-that never uses this never gets one. And a line is only appended when
-`buffer.last()` has actually advanced (deduped by timestamp) — otherwise
-`draw()` running at 60 fps would spam dozens of near-identical lines per
-second.
+The backend only ever moves bytes around; it has no idea what a "channel,"
+a "filter," or a "plot" is. All of that lives in `p5js/`.
 
-`p5js/README.md` has the exact steps for getting these files into your own
-p5.js Web Editor project, in case you're not starting from the shared link
-above.
+## License
+
+Two different licenses, split along the same backend/frontend line:
+
+- **Backend** (`app.yaml`, `requirements.txt`, `sketch/`, `python/`) —
+  [GPLv3](LICENSE). Same as the Linux kernel: commercial use is explicitly
+  fine, but anyone who distributes this code or a modified version of it
+  has to pass the source along under the same terms. GPLv3 specifically
+  (not v2) because the sketch links against Zephyr (Apache License 2.0),
+  and the FSF considers Apache 2.0 compatible with GPLv3 but not GPLv2.
+- **Frontend** (`p5js/`) — [MIT](p5js/LICENSE). Fork it, modify it, use it
+  commercially, no obligations beyond keeping the license notice.
+
+p5.js itself is LGPL-2.1 — since this project only loads it from a CDN
+rather than bundling or modifying it, that places no restriction on
+either license above.
