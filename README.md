@@ -92,14 +92,15 @@ you need to know the call actually completed — the snippet above fires
 and forgets, which is fine for a blink. This exact code is also a real
 file in this repo, `p5js/blink_demo.js`.
 
-A quick naming note, since it comes up for both examples: in the p5.js
-Web Editor, the file holding `setup()`/`draw()` is conventionally just
-called `sketch.js` — a project only ever runs one. This repo keeps Example
-1's and Example 2's content in two separate files (`blink_demo.js` and
-`sketch.js`, respectively) so neither overwrites the other on disk, but
-only one of them is ever actually your project's `sketch.js` at a time. To
-run this example, copy `blink_demo.js`'s content into your project's
-`sketch.js` (or start a separate project with just this file,
+A quick naming note, since it applies to both examples: a p5.js Web Editor
+project's entry point is conventionally called `sketch.js`, but nothing
+actually requires that name — what matters is that `index.html`'s
+`<script>` tag points to it. This repo keeps each example in its own
+descriptively-named file instead (`blink_demo.js` here, `dac-adc-demo.js`
+for Example 2), so both coexist without overwriting each other; this
+repo's own `p5js/index.html` points to `dac-adc-demo.js`. To run this
+example instead, upload `blink_demo.js` and point your project's
+`index.html` at it (or start a separate project with just this file,
 `digital_io.js`, and `transport.js`).
 
 ## Example 2: DAC/ADC
@@ -115,14 +116,14 @@ channel:
   browser,
 - plot it, and pause the whole sketch to freeze the view.
 
-None of that is fixed. `p5js/sketch.js` is a starting point meant to be
-read and edited, not a finished product handed to you.
+None of that is fixed. `p5js/dac-adc-demo.js` is a starting point meant
+to be read and edited, not a finished product handed to you.
 
 Sampling itself, on the other hand, currently *is* fixed: **200 Hz per
 active channel** (4 channels active means 800 raw ADC reads/sec in total,
 not 200 total split across them) and a **fixed 14-bit ADC resolution**
 (raw values 0–16383). Both are compile-time constants in `sketch.ino`, not
-something you can change from `sketch.js` at runtime — changing either
+something you can change from the p5.js side at runtime — changing either
 means re-flashing the backend.
 
 Two calls in `setup()` configure the hardware once and never need to run
@@ -148,11 +149,11 @@ variable on every incoming batch (so pausing also stops new data from
 being written into the buffer, not just `draw()`) — that variable has to
 exist in your sketch even if you never call `togglePause()`.
 
-Below is the exact, current content of this repo's `p5js/sketch.js` —
-this example's file, per the naming note above: A0 outputs a 3 Hz square
-wave, split with a branched cable into both A2 and A3, so channel 2 shows
-it raw and channel 3 shows the exact same signal through a lowpass you can
-toggle on and off live.
+Below is the exact, current content of this repo's `p5js/dac-adc-demo.js`
+— this example's file, per the naming note above: A0 outputs a 3 Hz
+square wave, split with a branched cable into both A2 and A3, so channel
+2 shows it raw and channel 3 shows the exact same signal through a
+lowpass you can toggle on and off live.
 
 ```js
 "use strict";
@@ -294,8 +295,8 @@ Everything downstream of that doesn't need it.
 **Frontend — in the browser, same machine:**
 
 1. Open the preinstalled Chromium browser on the UNO Q and go to the
-   shared project (the oscilloscope, Example 2 above):
-   https://editor.p5js.org/diy-ecg/full/SzSsXanI7
+   shared project (Example 2 above; its `sketch.js` there is this repo's
+   `p5js/dac-adc-demo.js`): https://editor.p5js.org/diy-ecg/full/SzSsXanI7
 2. Fork it into your own p5.js account (top-right in the editor), so you
    get your own editable copy with all the framework files already in
    place. For the Blink example instead, replace the forked project's

@@ -17,8 +17,11 @@ actually working around.
 
 1. Create a new project on `editor.p5js.org` under your own account.
 2. Use "Add File" in the file panel to upload the files in this folder
-   (file picker or drag & drop) — `sketch.js` replaces the editor's own
-   auto-created default `sketch.js`.
+   (file picker or drag & drop) — `dac-adc-demo.js` can replace the
+   editor's own auto-created default `sketch.js`. Either rename the
+   uploaded file to `sketch.js`, or update `index.html`'s `<script>` tag
+   to point at `dac-adc-demo.js` instead (this folder's own `index.html`
+   already does the latter).
 3. **Important:** the Socket.IO client library isn't bundled by default in
    a p5.js Web Editor project. The project's `index.html` needs an extra
    `<script>` tag *before* the other `.js` files:
@@ -48,9 +51,9 @@ actually working around.
    (`arduino-app-cli app start .` in the backend project's folder) before
    you hit run in the Web Editor — otherwise `connectBackend()` is
    trying to reach a server that isn't there yet.
-4. For experimenting, only touch `sketch.js` (filter settings, which
-   channels are active, DAC waveform, digital I/O, visualization). The
-   other five files normally shouldn't need to change.
+4. For experimenting, only touch `dac-adc-demo.js` (filter settings,
+   which channels are active, DAC waveform, digital I/O, visualization).
+   The other five files normally shouldn't need to change.
 
 ## Troubleshooting (hit while setting this up the first time)
 
@@ -86,10 +89,10 @@ actually working around.
   (`{transports: ["websocket"]}`), skipping the initial polling-handshake
   request altogether.
 - **`SyntaxError: redeclaration of let adc`** (or similarly for other
-  top-level variables) — `sketch.js` (or another file) is included as a
-  `<script>` tag **twice**, e.g. once via the editor's own auto-generated
-  line in `<body>` and once more when manually adding the remaining
-  scripts in `<head>`. Since all files share the same global scope, a
-  script loaded twice produces exactly this error. Fix: search
-  `index.html` for a duplicate `<script src="sketch.js">` line and remove
-  one of them.
+  top-level variables) — your project's main file (e.g. `dac-adc-demo.js`)
+  is included as a `<script>` tag **twice**, e.g. once via the editor's
+  own auto-generated line in `<body>` and once more when manually adding
+  the remaining scripts in `<head>`. Since all files share the same
+  global scope, a script loaded twice produces exactly this error. Fix:
+  search `index.html` for a duplicate `<script src="...">` line and
+  remove one of them.
