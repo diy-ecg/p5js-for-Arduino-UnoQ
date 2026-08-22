@@ -265,9 +265,9 @@ pin number D0–D21, not one of the A0–A5 indices used elsewhere).
 `digitalRead()` enables the pin's internal pull-up, so a button wired
 pin-to-GND needs no external resistor — same as on a classic Arduino.
 
-Enough for the classic Blink, entirely from `sketch.js`, no recompiling to
-change the blink rate. Wire an LED with a series resistor between the pin
-and GND — the UNO Q's digital pins run at **3.3 V**, not 5 V, so the usual
+Enough for the classic Blink, no recompiling needed to change the blink
+rate. Wire an LED with a series resistor between the pin and GND — the
+UNO Q's digital pins run at **3.3 V**, not 5 V, so the usual
 `R = (3.3V − Vf_LED) / I_target` gives smaller values than you may be used
 to from a classic Uno; ~220 Ω is a safe default for a standard
 red/yellow/green LED (~6 mA):
@@ -292,7 +292,11 @@ function draw() {
 
 `digitalWrite()`/`digitalRead()` both return promises (like `setupDAC()`),
 so `await` them if you need to know the call actually completed — the
-snippet above fires and forgets, which is fine for a blink.
+snippet above fires and forgets, which is fine for a blink. This exact
+code is also a real file, `p5js/blink_demo.js` — since a p5.js Web Editor
+project only runs one `sketch.js`, swap this in for the oscilloscope's
+`sketch.js` (or start a separate project with just this file,
+`digital_io.js`, and `transport.js`) to run it.
 
 `p5js/README.md` has the exact steps for getting these files into your own
 p5.js Web Editor project, in case you're not starting from the shared link
