@@ -141,10 +141,11 @@ variable on every incoming batch (so pausing also stops new data from
 being written into the buffer, not just `draw()`) — that variable has to
 exist in your sketch even if you never call `togglePause()`.
 
-This is the complete, current `p5js/sketch.js`: A0 outputs a 3 Hz square
-wave, split with a branched cable into both A2 and A3, so channel 2 shows
-it raw and channel 3 shows the exact same signal through a lowpass you can
-toggle on and off live.
+Below is the exact, current content of this repo's `p5js/sketch.js` — the
+file this DAC/ADC example ships as (not `blink_demo.js` from Example 1):
+A0 outputs a 3 Hz square wave, split with a branched cable into both A2
+and A3, so channel 2 shows it raw and channel 3 shows the exact same
+signal through a lowpass you can toggle on and off live.
 
 ```js
 "use strict";
