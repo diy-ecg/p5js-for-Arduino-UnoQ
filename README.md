@@ -95,6 +95,23 @@ p5js/                           frontend – the p5.js sketch and its
 The backend only ever moves bytes around; it has no idea what a "channel,"
 a "filter," or a "plot" is. All of that lives in `p5js/`.
 
+## License
+
+Two different licenses, split along the same backend/frontend line:
+
+- **Backend** (`app.yaml`, `requirements.txt`, `sketch/`, `python/`) —
+  [GPLv3](LICENSE). Same as the Linux kernel: commercial use is explicitly
+  fine, but anyone who distributes this code or a modified version of it
+  has to pass the source along under the same terms. GPLv3 specifically
+  (not v2) because the sketch links against Zephyr (Apache License 2.0),
+  and the FSF considers Apache 2.0 compatible with GPLv3 but not GPLv2.
+- **Frontend** (`p5js/`) — [MIT](p5js/LICENSE). Fork it, modify it, use it
+  commercially, no obligations beyond keeping the license notice.
+
+p5.js itself is LGPL-2.1 — since this project only loads it from a CDN
+rather than bundling or modifying it, that places no restriction on
+either license above.
+
 ## Getting it running
 
 **Backend — on the UNO Q itself:**
