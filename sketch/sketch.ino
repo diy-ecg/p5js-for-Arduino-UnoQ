@@ -356,9 +356,9 @@ bool dac_off(int channel) {
 }
 
 // Plain digital I/O, independent of the ADC/DAC channels above -- pin is a
-// normal Arduino digital pin number (e.g. 13 for the onboard LED), not one
-// of the A0..A5 indices used elsewhere in this sketch. One-shot calls, same
-// as dac_off() -- no ring buffer, no streaming.
+// normal Arduino digital pin number (D0..D21), not one of the A0..A5
+// indices used elsewhere in this sketch. One-shot calls, same as dac_off()
+// -- no ring buffer, no streaming.
 bool digital_write(int pin, int value) {
   if (pin < 0) return false;
   pinMode(pin, OUTPUT);
@@ -366,8 +366,12 @@ bool digital_write(int pin, int value) {
   return true;
 }
 
+// INPUT_PULLUP, not plain INPUT: the UNO Q's internal pull-up resistors
+// work the same as on a classic Arduino, so a button wired pin-to-GND
+// needs no external pull-up/pull-down resistor. Reads HIGH when idle,
+// LOW when the button pulls the pin to GND.
 int digital_read(int pin) {
   if (pin < 0) return -1;
-  pinMode(pin, INPUT);
+  pinMode(pin, INPUT_PULLUP);
   return digitalRead(pin);
 }

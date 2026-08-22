@@ -261,9 +261,16 @@ second.
 The backend/frontend split isn't specific to analog signals — the same
 one-shot RPC shape used for `setupDAC()` covers `digitalWrite`/
 `digitalRead` too (`p5js/digital_io.js`, `pin` is a normal Arduino digital
-pin number, e.g. 13 for the onboard LED, not one of the A0–A5 indices used
-elsewhere). Enough for the classic Blink, entirely from `sketch.js`, no
-recompiling to change the blink rate:
+pin number D0–D21, not one of the A0–A5 indices used elsewhere).
+`digitalRead()` enables the pin's internal pull-up, so a button wired
+pin-to-GND needs no external resistor — same as on a classic Arduino.
+
+Enough for the classic Blink, entirely from `sketch.js`, no recompiling to
+change the blink rate. Wire an LED with a series resistor between the pin
+and GND — the UNO Q's digital pins run at **3.3 V**, not 5 V, so the usual
+`R = (3.3V − Vf_LED) / I_target` gives smaller values than you may be used
+to from a classic Uno; ~220 Ω is a safe default for a standard
+red/yellow/green LED (~6 mA):
 
 ```js
 let lastToggle = 0;
@@ -277,7 +284,7 @@ function setup() {
 function draw() {
   if (millis() - lastToggle > 500) {
     ledOn = !ledOn;
-    digitalWrite(13, ledOn);
+    digitalWrite(2, ledOn);   // matches wherever you wired the LED
     lastToggle = millis();
   }
 }

@@ -2,8 +2,9 @@
 
 /**
  * Plain digital I/O, independent of the ADC/DAC channels in adc_channel.js.
- * `pin` is a normal Arduino digital pin number (e.g. 13 for the onboard
- * LED), not one of the A0..A5 indices used elsewhere.
+ * `pin` is a normal Arduino digital pin number (D0..D21), not one of the
+ * A0..A5 indices used elsewhere. digitalRead() uses an internal pull-up on
+ * the MCU side, so a button wired pin-to-GND needs no external resistor.
  *
  * Same one-shot RPC shape as setupDAC()/dacOff() -- socket comes from
  * transport.js; connectBackend() must run before either of these.
