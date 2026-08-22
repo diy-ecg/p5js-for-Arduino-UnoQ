@@ -269,18 +269,31 @@ recompiling to change the blink rate:
 let lastToggle = 0;
 let ledOn = false;
 
+function setup() {
+  createCanvas(200, 200);
+  connectAdcBackend();
+}
+
 function draw() {
   if (millis() - lastToggle > 500) {
     ledOn = !ledOn;
     digitalWrite(13, ledOn);
     lastToggle = millis();
   }
+
+  background(255);
+  noStroke();
+  fill(ledOn ? "red" : 220);
+  circle(width / 2, height / 2, 80);
 }
 ```
 
-`digitalWrite()`/`digitalRead()` both return promises (like `setupDAC()`),
-so `await` them if you need to know the call actually completed — the
-snippet above fires and forgets, which is fine for a blink.
+The circle is just a screen mirror of the physical LED's state — not
+required for `digitalWrite()` to work, but a nice way to see the blink
+even without the board in view. `digitalWrite()`/`digitalRead()` both
+return promises (like `setupDAC()`), so `await` them if you need to know
+the call actually completed — the snippet above fires and forgets, which
+is fine for a blink.
 
 `p5js/README.md` has the exact steps for getting these files into your own
 p5.js Web Editor project, in case you're not starting from the shared link
