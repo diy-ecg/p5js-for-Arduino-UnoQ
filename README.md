@@ -300,7 +300,7 @@ Everything downstream of that doesn't need it.
 1. Open the preinstalled Chromium browser on the UNO Q and go to the
    shared project — it mirrors this repo's `p5js/` folder exactly,
    including both demo files: https://editor.p5js.org/diy-ecg/full/cM1nGSgLc
-2. Fork it into your own p5.js account (top-right in the editor), so you
+2. Fork it into your own p5.js account via **File > Duplicate**, so you
    get your own editable copy with all the framework files already in
    place. Blink runs by default, matching Example 1; to run the DAC/ADC
    example instead, comment/uncomment the two `<script>` tags in

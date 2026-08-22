@@ -37,9 +37,9 @@ actually working around.
 
 ## Forking it for your own experiments
 
-1. Open the shared link and **fork** it (the "Duplicate"/fork button) — you
-   get your own, independently editable copy in your own p5.js account,
-   with all the framework files already in place.
+1. Open the shared link and **fork** it via **File > Duplicate** — you get
+   your own, independently editable copy in your own p5.js account, with
+   all the framework files already in place.
 2. The sketch has to run in the same browser that's actually on the UNO Q
    (single-board mode) — it connects to `http://127.0.0.1:7000`, which is
    only reachable from that device itself. This has been tested with the
