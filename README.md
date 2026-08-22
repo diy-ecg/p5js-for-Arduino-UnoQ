@@ -4,8 +4,8 @@ A pattern for building UNO Q apps: a small, stable Arduino App as the
 backend, and a p5.js sketch you live-code in the browser as the frontend —
 so you don't have to recompile and restart the whole app every time you
 want to change what your code actually does. Two working examples are
-included: a 4-channel oscilloscope (ADC/DAC) and a Blink demo (digital
-I/O).
+included: a Blink demo (digital I/O) and a 4-channel oscilloscope
+(ADC/DAC).
 
 ## The problem this solves
 
@@ -27,24 +27,24 @@ differently."
 ## The idea
 
 Split the project along exactly that line. Everything that has to live
-close to the hardware — reading the ADC pins, generating the DAC waveform,
-moving bytes across Bridge/RPC — becomes a small, stable **Arduino App**
-that you flash and start once and then mostly leave alone. That's the
-**backend**.
+close to the hardware — reading or writing a pin, moving bytes across
+Bridge/RPC — becomes a small, stable **Arduino App** that you flash and
+start once and then mostly leave alone. That's the **backend**.
 
 Everything you'd actually want to fiddle with while experimenting — which
-channels to look at, what filters to run on them, how to draw them, what to
-compute from them — moves into a **p5.js sketch** running in an ordinary
+pins to use, what to do with their data, how to visualize it, what to
+compute from it — moves into a **p5.js sketch** running in an ordinary
 browser tab, talking to the backend over Socket.IO. Change the sketch, hit
 the p5.js editor's play button, see the result immediately. No App Lab, no
 recompiling the MCU sketch, no restarting the backend. That's the
 **frontend**.
 
 The backend doesn't know or care what happens to the data once it leaves
-the board — it just relays raw, tagged ADC samples. All the actual
-"oscilloscope" behavior — channel selection, filtering, R-peak/BPM
-detection, plotting, CSV export — lives entirely on the p5.js side, in code
-you're expected to read and rewrite, not a black box you configure.
+the board — it just relays raw values back and forth. All the actual
+behavior — what a blink pattern looks like, channel selection, filtering,
+R-peak/BPM detection, plotting, CSV export — lives entirely on the p5.js
+side, in code you're expected to read and rewrite, not a black box you
+configure.
 
 ## A small circle closes here
 
@@ -55,7 +55,49 @@ live-coding, fast-iteration half of this project in p5.js instead of in the
 Arduino IDE itself isn't just a convenient choice of frontend technology —
 it's going back to roughly where a lot of this started.
 
-## Example 1: a 4-channel oscilloscope
+## Example 1: Blink over digital I/O
+
+The simplest possible version of the pattern: `digitalWrite`/
+`digitalRead` as one-shot RPC calls (`p5js/digital_io.js`), no streaming,
+no buffering. `pin` is a normal Arduino digital pin number D0–D21, not one
+of the A0–A5 indices the oscilloscope example below uses. `digitalRead()`
+enables the pin's internal pull-up, so a button wired pin-to-GND needs no
+external resistor — same as on a classic Arduino.
+
+Enough for the classic Blink, no recompiling needed to change the blink
+rate. Wire an LED with a series resistor between the pin and GND — the
+UNO Q's digital pins run at **3.3 V**, not 5 V, so the usual
+`R = (3.3V − Vf_LED) / I_target` gives smaller values than you may be used
+to from a classic Uno; ~220 Ω is a safe default for a standard
+red/yellow/green LED (~6 mA):
+
+```js
+let lastToggle = 0;
+let ledOn = false;
+
+function setup() {
+  createCanvas(200, 200);
+  connectBackend();
+}
+
+function draw() {
+  if (millis() - lastToggle > 500) {
+    ledOn = !ledOn;
+    digitalWrite(2, ledOn);   // matches wherever you wired the LED
+    lastToggle = millis();
+  }
+}
+```
+
+`digitalWrite()`/`digitalRead()` both return promises, so `await` them if
+you need to know the call actually completed — the snippet above fires
+and forgets, which is fine for a blink. This exact code is also a real
+file, `p5js/blink_demo.js` — since a p5.js Web Editor project only runs
+one `sketch.js`, swap this in for whichever sketch.js content is
+currently active (or start a separate project with just this file,
+`digital_io.js`, and `transport.js`) to run it.
+
+## Example 2: a 4-channel oscilloscope
 
 Out of the box: a 4-channel scope. Pick any subset of A0–A5 (up to four at
 once) as ADC inputs, optionally drive a fixed sine/square/triangle wave out
@@ -133,10 +175,13 @@ Everything downstream of that doesn't need it.
 **Frontend — in the browser, same machine:**
 
 1. Open the preinstalled Chromium browser on the UNO Q and go to the
-   shared project: https://editor.p5js.org/diy-ecg/full/SzSsXanI7
+   shared project (the oscilloscope, Example 2 above):
+   https://editor.p5js.org/diy-ecg/full/SzSsXanI7
 2. Fork it into your own p5.js account (top-right in the editor), so you
    get your own editable copy with all the framework files already in
-   place.
+   place. For the Blink example instead, replace the forked project's
+   `sketch.js` with `p5js/blink_demo.js`'s contents — same fork, same
+   backend, no separate setup.
 3. Hit run. The first time a sketch tries to reach the backend, Chromium
    shows a one-time button asking you to explicitly allow access to the
    local network — click it. From then on the sketch connects to
@@ -152,7 +197,7 @@ and it's done.
 From here on, all further iteration happens in the p5.js editor — edit,
 hit run, done. No App Lab involved.
 
-## Writing your own experiment: the simplest possible `sketch.js`
+## Writing your own oscilloscope experiment: the simplest possible `sketch.js`
 
 The framework files (`adc_channel.js`, `ring_buffer.js`, `filters.js`,
 `transport.js`) handle the plumbing — connecting, decoding frames,
@@ -255,48 +300,6 @@ that never uses this never gets one. And a line is only appended when
 `buffer.last()` has actually advanced (deduped by timestamp) — otherwise
 `draw()` running at 60 fps would spam dozens of near-identical lines per
 second.
-
-### Beyond ADC/DAC: plain digital I/O
-
-The backend/frontend split isn't specific to analog signals — the same
-one-shot RPC shape used for `setupDAC()` covers `digitalWrite`/
-`digitalRead` too (`p5js/digital_io.js`, `pin` is a normal Arduino digital
-pin number D0–D21, not one of the A0–A5 indices used elsewhere).
-`digitalRead()` enables the pin's internal pull-up, so a button wired
-pin-to-GND needs no external resistor — same as on a classic Arduino.
-
-Enough for the classic Blink, no recompiling needed to change the blink
-rate. Wire an LED with a series resistor between the pin and GND — the
-UNO Q's digital pins run at **3.3 V**, not 5 V, so the usual
-`R = (3.3V − Vf_LED) / I_target` gives smaller values than you may be used
-to from a classic Uno; ~220 Ω is a safe default for a standard
-red/yellow/green LED (~6 mA):
-
-```js
-let lastToggle = 0;
-let ledOn = false;
-
-function setup() {
-  createCanvas(200, 200);
-  connectBackend();
-}
-
-function draw() {
-  if (millis() - lastToggle > 500) {
-    ledOn = !ledOn;
-    digitalWrite(2, ledOn);   // matches wherever you wired the LED
-    lastToggle = millis();
-  }
-}
-```
-
-`digitalWrite()`/`digitalRead()` both return promises (like `setupDAC()`),
-so `await` them if you need to know the call actually completed — the
-snippet above fires and forgets, which is fine for a blink. This exact
-code is also a real file, `p5js/blink_demo.js` — since a p5.js Web Editor
-project only runs one `sketch.js`, swap this in for the oscilloscope's
-`sketch.js` (or start a separate project with just this file,
-`digital_io.js`, and `transport.js`) to run it.
 
 `p5js/README.md` has the exact steps for getting these files into your own
 p5.js Web Editor project, in case you're not starting from the shared link
