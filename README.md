@@ -54,6 +54,14 @@ live-coding, fast-iteration half of this project in p5.js instead of in the
 Arduino IDE itself isn't just a convenient choice of frontend technology —
 it's going back to roughly where a lot of this started.
 
+It's also not just a nostalgic fit: p5.js's whole reason for existing is
+making visual, graphical work approachable — well beyond what the Arduino
+Serial Plotter or a `print()` statement can do. The plotting and live
+filter-toggling in the DAC/ADC example below lean directly on that; if
+you're building your own experiment on top of this pattern, p5.js's
+drawing primitives (shapes, color, animation) are worth exploring well
+beyond a simple line plot.
+
 ## Example 1: Blink over digital I/O
 
 The simplest possible version of the pattern: `digitalWrite`/
@@ -280,6 +288,12 @@ whatever else the UNO Q can do — if there's interest, this can keep
 growing.
 
 ## Getting it running
+
+Assumes the UNO Q is already running in **single-board mode** (monitor,
+keyboard, and mouse attached directly to the board — no separate host
+laptop), you're logged into its desktop, and it has an internet
+connection (needed to download this repo, and for the browser to reach
+the p5.js/Socket.IO CDNs and the p5.js Web Editor).
 
 **Backend — on the UNO Q itself:**
 
