@@ -353,6 +353,23 @@ p5js/                           frontend – the p5.js sketch and its
 The backend only ever moves bytes around; it has no idea what a "channel,"
 a "filter," or a "plot" is. All of that lives in `p5js/`.
 
+### `p5js/` in detail
+
+| File | Role | What it does |
+|---|---|---|
+| `blink_demo.js` | example | Example 1, Blink over digital I/O — `setup()`/`draw()`, one `digitalWrite()` call. Active by default in `index.html`. |
+| `dac-adc-demo.js` | example | Example 2, the DAC/ADC scope — `setupADC()`/`setupDAC()`, two channels (raw + lowpass), plotting. Commented out in `index.html` by default. |
+| `adc_channel.js` | framework | `AdcChannel` class; `setupADC()`, `setupDAC()`, `dacOff()` — the one-time RPC calls that configure ADC channels and DAC waveforms. |
+| `digital_io.js` | framework | `digitalWrite()`/`digitalRead()` — the one-shot RPC calls for plain digital I/O. |
+| `filters.js` | framework | `FilterChain`/`FilterStage`, the `make*()` filter factories, and `attachFilter()` — the piece that actually feeds a channel's buffer. |
+| `ring_buffer.js` | framework | `RingBuffer` — the fixed-size circular buffer behind every `AdcChannel.buffer`. |
+| `transport.js` | framework | `connectBackend()` and the Socket.IO plumbing — connects to the backend, decodes incoming ADC frames, demultiplexes by channel. |
+| `index.html` | — | Wires every file above in as a `<script>` tag (plus the p5.js/p5.sound/Socket.IO CDN tags), and picks which example is active. |
+| `style.css` | — | Minimal canvas styling, a couple of lines. |
+
+Both examples share every framework file — only `blink_demo.js` /
+`dac-adc-demo.js`, and which of the two `index.html` has active, differ.
+
 ## License
 
 Two different licenses, split along the same backend/frontend line:
