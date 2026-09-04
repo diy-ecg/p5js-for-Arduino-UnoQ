@@ -38,8 +38,10 @@ async function setup() {
 
 function draw() {
   background(255);
-  plotChannel(adc[2].buffer.toArray(), 0, 2);
-  plotChannel(adc[3].buffer.toArray(), 1, 2);
+  // plotGraph() now lives in plotting.js, shared with adc0_scope_demo.js --
+  // used to be a local plotChannel() here, same signature.
+  plotGraph(adc[2].buffer.toArray(), 0, 2);
+  plotGraph(adc[3].buffer.toArray(), 1, 2);
 
   noStroke();
   fill(0);
@@ -49,40 +51,4 @@ function draw() {
 function togglePause() {
   paused = !paused;
   paused ? noLoop() : loop();
-}
-
-/* ==================== Visualization -- replace freely ==================== */
-
-// One band per channel, auto-scaled to the currently visible min/max.
-// A fixed gap between bands keeps neighboring channels from touching.
-const BAND_GAP = 10;
-
-function plotChannel(points, index, total) {
-  if (points.length < 2) return;
-  const bandHeight = height / total;
-  const yTop = index * bandHeight;
-  const yBottom = yTop + bandHeight - BAND_GAP;
-
-  const tMin = points[0].t,
-    tMax = points[points.length - 1].t;
-  let vMin = Infinity,
-    vMax = -Infinity;
-  points.forEach((p) => {
-    if (p.v < vMin) vMin = p.v;
-    if (p.v > vMax) vMax = p.v;
-  });
-  if (vMin === vMax) {
-    vMin -= 1;
-    vMax += 1;
-  }
-
-  noFill();
-  stroke(0);
-  beginShape();
-  points.forEach((p) => {
-    const x = map(p.t, tMin, tMax, 0, width);
-    const y = map(p.v, vMin, vMax, yBottom, yTop);
-    vertex(x, y);
-  });
-  endShape();
 }
