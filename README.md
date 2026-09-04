@@ -62,6 +62,59 @@ you're building your own experiment on top of this pattern, p5.js's
 drawing primitives (shapes, color, animation) are worth exploring well
 beyond a simple line plot.
 
+## Getting it running
+
+Assumes the UNO Q is already running in **single-board mode** (monitor,
+keyboard, and mouse attached directly to the board — no separate host
+laptop), you're logged into its desktop, and it has an internet
+connection (needed to download this repo, and for the browser to reach
+the p5.js/Socket.IO CDNs and the p5.js Web Editor).
+
+**Backend — on the UNO Q itself:**
+
+1. Download this repository as a ZIP from GitHub and unzip it on the UNO
+   Q's Linux desktop.
+2. Copy the unzipped folder into your Arduino App Lab apps directory — the
+   same place your other Arduino Apps live. It should now show up as an
+   app inside App Lab.
+3. Start it from App Lab. This compiles and flashes `sketch/sketch.ino` and
+   starts the Python relay, which listens on `http://127.0.0.1:7000`.
+
+You only need to repeat this whole step when you actually change something
+on the backend side (pin wiring, the RPC surface, the sampling rate).
+Everything downstream of that doesn't need it.
+
+**Frontend — in the browser, same machine:**
+
+1. Open the preinstalled Chromium browser on the UNO Q and go to the
+   shared project, which mirrors this repo's `p5js/` folder (kept in sync
+   by hand — if it's missing `plotting.js` or `adc0_scope_demo.js`,
+   re-upload them via "Add File" before continuing):
+   https://editor.p5js.org/diy-ecg/full/cM1nGSgLc
+2. Fork it into your own p5.js account via **File > Duplicate**, so you
+   get your own editable copy with all the framework files already in
+   place. Blink runs by default, matching Example 1 below; to run one of
+   the other demos instead, comment/uncomment its `<script>` tag in
+   `index.html` — see Example 2 and its classic-comparison callout below
+   for which file does what.
+3. Hit run. The first time a sketch tries to reach the backend, Chromium
+   shows a one-time button asking you to explicitly allow access to the
+   local network — click it. From then on the sketch connects to
+   `127.0.0.1:7000` automatically, and you should start seeing live data.
+
+This setup assumes the browser and the backend run on the same machine —
+tested on the UNO Q's own Linux desktop with the preinstalled Chromium.
+The p5.js sketch's preview runs on a different origin than your local
+backend and reaches it over a loopback address; the permission button
+above is exactly Chromium's check for that. Click "allow" once per sketch
+and it's done.
+
+From here on, all further iteration happens in the p5.js editor — edit,
+hit run, done. No App Lab involved. `p5js/README.md` has the exact steps
+for getting these files into your own p5.js Web Editor project, in case
+you're not starting from the shared link above. With the backend running
+and the frontend forked, the two examples below are ready to try.
+
 ## Example 1: Blink over digital I/O
 
 The simplest possible version of the pattern: `digitalWrite`/
@@ -100,17 +153,48 @@ you need to know the call actually completed — the snippet above fires
 and forgets, which is fine for a blink. This exact code is also a real
 file in this repo, `p5js/blink_demo.js`.
 
-A quick naming note, since it applies to both examples: a p5.js Web Editor
-project's entry point is conventionally called `sketch.js`, but nothing
-actually requires that name — what matters is that `index.html`'s
-`<script>` tag points to it. This repo keeps each example in its own
+A quick naming note, since it applies to every demo in this repo: a p5.js
+Web Editor project's entry point is conventionally called `sketch.js`, but
+nothing actually requires that name — what matters is that `index.html`'s
+`<script>` tag points to it. This repo keeps each demo in its own
 descriptively-named file instead (`blink_demo.js` here, `dac-adc-demo.js`
-for Example 2), so both coexist without overwriting each other.
-`p5js/index.html` in this repo has both wired in as `<script>` tags, with
-`blink_demo.js` active and `dac-adc-demo.js` commented out — this is the
-default, so this example runs as-is (or start a separate project with
-just this file, `digital_io.js`, and `transport.js`, if you'd rather not
-touch `index.html` at all).
+and `adc0_scope_demo.js` for Example 2 below), so all three coexist
+without overwriting each other. `p5js/index.html` in this repo has all
+three wired in as `<script>` tags, with `blink_demo.js` active and the
+other two commented out — this is the default, so this example runs
+as-is (or start a separate project with just this file, `digital_io.js`,
+and `transport.js`, if you'd rather not touch `index.html` at all).
+
+### Classic comparison
+
+The classic version of the same idea, on a classic Uno: `pinMode()` once
+in `setup()`, `digitalWrite()` in `loop()` on a timer built from `millis()`.
+
+```cpp
+unsigned long lastToggle = 0;
+bool ledOn = false;
+
+void setup() {
+  pinMode(2, OUTPUT);
+}
+
+void loop() {
+  if (millis() - lastToggle > 500) {
+    ledOn = !ledOn;
+    digitalWrite(2, ledOn ? HIGH : LOW);
+    lastToggle = millis();
+  }
+}
+```
+
+Line up the two: `setup()`/`setup()`, `loop()`/`draw()`, one
+`digitalWrite()` call each. p5.js's `millis()` is the same function doing
+the same job, down to the name — the Processing ancestry from "A small
+circle closes here" above showing up directly in the code, not just in
+spirit. The whole practical difference is what's missing on the p5.js
+side: no `pinMode()` (the backend already knows the pin's an output), and
+no host computer, IDE, or upload step at all — just this file and a
+browser tab, both already covered in "Getting it running" above.
 
 ## Example 2: DAC/ADC
 
@@ -207,8 +291,10 @@ async function setup() {
 
 function draw() {
   background(255);
-  plotChannel(adc[2].buffer.toArray(), 0, 2);
-  plotChannel(adc[3].buffer.toArray(), 1, 2);
+  // plotGraph() lives in plotting.js, shared across every demo that plots
+  // a channel's buffer -- used to be a local plotChannel() here.
+  plotGraph(adc[2].buffer.toArray(), 0, 2);
+  plotGraph(adc[3].buffer.toArray(), 1, 2);
 
   noStroke();
   fill(0);
@@ -219,43 +305,55 @@ function togglePause() {
   paused = !paused;
   paused ? noLoop() : loop();
 }
+```
 
-/* ==================== Visualization -- replace freely ==================== */
+### Classic comparison
 
-// One band per channel, auto-scaled to the currently visible min/max.
-// A fixed gap between bands keeps neighboring channels from touching.
-const BAND_GAP = 10;
+Comparing directly against the two-channel, filtered scope above wouldn't
+be a fair fight — the classic side of this comparison is a single,
+unfiltered channel, sampled and plotted the plain way.
+[`classic-adc-reference/`](classic-adc-reference/) has the full pair: a
+Uno R3 sketch that samples A0 at 200 Hz and writes each value over serial,
+plus a Processing sketch on a separate host computer that opens the port
+and plots it.
 
-function plotChannel(points, index, total) {
-  if (points.length < 2) return;
-  const bandHeight = height / total;
-  const yTop = index * bandHeight;
-  const yBottom = yTop + bandHeight - BAND_GAP;
+`p5js/adc0_scope_demo.js` is the matching, equally minimal p5.js side —
+one channel, no filter, the same 200 Hz on both sides (not a coincidence:
+`sketch.ino`'s `SAMPLE_INTERVAL_US` and `classic_adc_serial.ino`'s
+sampling loop are set to the same rate on purpose, so the comparison
+isn't tilted by one side sampling faster). A DAC1 square wave, jumpered
+into A0, stands in for whatever signal you'd actually be sampling, so
+there's something on screen:
 
-  const tMin = points[0].t,
-    tMax = points[points.length - 1].t;
-  let vMin = Infinity,
-    vMax = -Infinity;
-  points.forEach((p) => {
-    if (p.v < vMin) vMin = p.v;
-    if (p.v > vMax) vMax = p.v;
-  });
-  if (vMin === vMax) {
-    vMin -= 1;
-    vMax += 1;
-  }
+```js
+"use strict";
 
-  noFill();
-  stroke(0);
-  beginShape();
-  points.forEach((p) => {
-    const x = map(p.t, tMin, tMax, 0, width);
-    const y = map(p.v, vMin, vMax, yBottom, yTop);
-    vertex(x, y);
-  });
-  endShape();
+const ADC_RATE_HZ = 200; // matches sketch.ino's fixed sampling rate --
+// the same 200 Hz classic_adc_serial.ino samples at.
+const BUFFER_SIZE = 800; // samples kept (~4s at 200Hz)
+const SQUARE_HZ = 3; // DAC1's output frequency
+
+let adc;
+let paused = false; // attachFilter() (filters.js) gates on this
+
+async function setup() {
+  createCanvas(800, 400);
+  connectBackend();
+
+  adc = await setupADC({ channels: [0], bufferSize: BUFFER_SIZE });
+  await setupDAC(1, { type: "square", freqHz: SQUARE_HZ, amplitude: 1.0 });
+  attachFilter(adc[0]); // no chain -- raw samples straight into the buffer
+}
+
+function draw() {
+  background(255);
+  plotGraph(adc[0].buffer.toArray());
 }
 ```
+
+No serial port to pick, no baud rate, no second program or IDE, no host
+computer at all — the same backend and the same browser tab already
+running for Example 1 above.
 
 ## Summary
 
@@ -277,6 +375,11 @@ Two examples, one small, consistent API on the frontend so far:
 - `adc[channel].buffer.toArray()` / `.last()` — read whatever a channel
   currently has buffered, for `draw()` to plot or do anything else with.
 
+`plotGraph()` (`p5js/plotting.js`) is the one deliberate exception — a
+shared visualization helper, not part of the backend-talking API above,
+and just as freely replaceable as it was back when each demo kept its own
+copy.
+
 That's the whole surface right now, and it's deliberately small — this
 repo is a proof of concept for the pattern, not a finished product.
 Nothing about the split ties it to ADC/DAC or digital I/O specifically:
@@ -286,55 +389,6 @@ relay, and a small wrapper function on the p5.js side — and any other
 Arduino capability could be added the same way. I2C sensors, PWM, servos,
 whatever else the UNO Q can do — if there's interest, this can keep
 growing.
-
-## Getting it running
-
-Assumes the UNO Q is already running in **single-board mode** (monitor,
-keyboard, and mouse attached directly to the board — no separate host
-laptop), you're logged into its desktop, and it has an internet
-connection (needed to download this repo, and for the browser to reach
-the p5.js/Socket.IO CDNs and the p5.js Web Editor).
-
-**Backend — on the UNO Q itself:**
-
-1. Download this repository as a ZIP from GitHub and unzip it on the UNO
-   Q's Linux desktop.
-2. Copy the unzipped folder into your Arduino App Lab apps directory — the
-   same place your other Arduino Apps live. It should now show up as an
-   app inside App Lab.
-3. Start it from App Lab. This compiles and flashes `sketch/sketch.ino` and
-   starts the Python relay, which listens on `http://127.0.0.1:7000`.
-
-You only need to repeat this whole step when you actually change something
-on the backend side (pin wiring, the RPC surface, the sampling rate).
-Everything downstream of that doesn't need it.
-
-**Frontend — in the browser, same machine:**
-
-1. Open the preinstalled Chromium browser on the UNO Q and go to the
-   shared project — it mirrors this repo's `p5js/` folder exactly,
-   including both demo files: https://editor.p5js.org/diy-ecg/full/cM1nGSgLc
-2. Fork it into your own p5.js account via **File > Duplicate**, so you
-   get your own editable copy with all the framework files already in
-   place. Blink runs by default, matching Example 1; to run the DAC/ADC
-   example instead, comment/uncomment the two `<script>` tags in
-   `index.html` as described in Example 2 above.
-3. Hit run. The first time a sketch tries to reach the backend, Chromium
-   shows a one-time button asking you to explicitly allow access to the
-   local network — click it. From then on the sketch connects to
-   `127.0.0.1:7000` automatically, and you should start seeing live data.
-
-This setup assumes the browser and the backend run on the same machine —
-tested on the UNO Q's own Linux desktop with the preinstalled Chromium.
-The p5.js sketch's preview runs on a different origin than your local
-backend and reaches it over a loopback address; the permission button
-above is exactly Chromium's check for that. Click "allow" once per sketch
-and it's done.
-
-From here on, all further iteration happens in the p5.js editor — edit,
-hit run, done. No App Lab involved. `p5js/README.md` has the exact steps
-for getting these files into your own p5.js Web Editor project, in case
-you're not starting from the shared link above.
 
 ## Repository layout
 
@@ -348,6 +402,10 @@ python/                         backend  – Linux-side relay: pulls frames
                                             unmodified
 p5js/                           frontend – the p5.js sketch and its
                                             supporting files
+classic-adc-reference/          reference – classic Uno R3 + host-computer
+                                             baseline for the ADC
+                                             comparison post, not part of
+                                             the Uno Q pattern itself
 ```
 
 The backend only ever moves bytes around; it has no idea what a "channel,"
@@ -359,16 +417,19 @@ a "filter," or a "plot" is. All of that lives in `p5js/`.
 |---|---|---|
 | `blink_demo.js` | example | Example 1, Blink over digital I/O — `setup()`/`draw()`, one `digitalWrite()` call. Active by default in `index.html`. |
 | `dac-adc-demo.js` | example | Example 2, the DAC/ADC scope — `setupADC()`/`setupDAC()`, two channels (raw + lowpass), plotting. Commented out in `index.html` by default. |
+| `adc0_scope_demo.js` | example | Example 2's classic-comparison demo — single unfiltered channel, DAC1 as the source signal. Commented out in `index.html` by default. |
 | `adc_channel.js` | framework | `AdcChannel` class; `setupADC()`, `setupDAC()`, `dacOff()` — the one-time RPC calls that configure ADC channels and DAC waveforms. |
 | `digital_io.js` | framework | `digitalWrite()`/`digitalRead()` — the one-shot RPC calls for plain digital I/O. |
 | `filters.js` | framework | `FilterChain`/`FilterStage`, the `make*()` filter factories, and `attachFilter()` — the piece that actually feeds a channel's buffer. |
 | `ring_buffer.js` | framework | `RingBuffer` — the fixed-size circular buffer behind every `AdcChannel.buffer`. |
 | `transport.js` | framework | `connectBackend()` and the Socket.IO plumbing — connects to the backend, decodes incoming ADC frames, demultiplexes by channel. |
-| `index.html` | — | Wires every file above in as a `<script>` tag (plus the p5.js/p5.sound/Socket.IO CDN tags), and picks which example is active. |
+| `plotting.js` | framework | `plotGraph()` — shared time-series plotting helper, auto-scaled to whatever's currently buffered. Used by `dac-adc-demo.js` and `adc0_scope_demo.js`. |
+| `index.html` | — | Wires every file above in as a `<script>` tag (plus the p5.js/p5.sound/Socket.IO CDN tags), and picks which demo is active. |
 | `style.css` | — | Minimal canvas styling, a couple of lines. |
 
-Both examples share every framework file — only `blink_demo.js` /
-`dac-adc-demo.js`, and which of the two `index.html` has active, differ.
+All three demo files share every framework file — only `blink_demo.js` /
+`dac-adc-demo.js` / `adc0_scope_demo.js`, and which one `index.html` has
+active, differ.
 
 ## License
 
@@ -382,6 +443,9 @@ Two different licenses, split along the same backend/frontend line:
   and the FSF considers Apache 2.0 compatible with GPLv3 but not GPLv2.
 - **Frontend** (`p5js/`) — [MIT](p5js/LICENSE). Fork it, modify it, use it
   commercially, no obligations beyond keeping the license notice.
+- **`classic-adc-reference/`** — [MIT](classic-adc-reference/LICENSE) as
+  well. Comparison material for the ADC forum post, not part of the Uno Q
+  pattern itself.
 
 p5.js itself is LGPL-2.1 — since this project only loads it from a CDN
 rather than bundling or modifying it, that places no restriction on

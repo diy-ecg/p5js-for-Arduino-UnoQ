@@ -18,10 +18,10 @@ actually working around.
 1. Create a new project on `editor.p5js.org` under your own account.
 2. Use "Add File" in the file panel to upload the files in this folder
    (file picker or drag & drop). This folder's `index.html` already wires
-   up both demo files as `<script>` tags — `blink_demo.js` active,
-   `dac-adc-demo.js` commented out. Comment/uncomment to pick which one
-   runs, or rename whichever one you want to `sketch.js` to replace the
-   editor's own auto-created default entirely.
+   up all three demo files as `<script>` tags — `blink_demo.js` active,
+   `dac-adc-demo.js` and `adc0_scope_demo.js` commented out. Comment/
+   uncomment to pick which one runs, or rename whichever one you want to
+   `sketch.js` to replace the editor's own auto-created default entirely.
 3. **Important:** the Socket.IO client library isn't bundled by default in
    a p5.js Web Editor project. The project's `index.html` needs an extra
    `<script>` tag *before* the other `.js` files:
@@ -51,9 +51,11 @@ actually working around.
    (`arduino-app-cli app start .` in the backend project's folder) before
    you hit run in the Web Editor — otherwise `connectBackend()` is
    trying to reach a server that isn't there yet.
-4. For experimenting, only touch `dac-adc-demo.js` (filter settings,
-   which channels are active, DAC waveform, digital I/O, visualization).
-   The other six files normally shouldn't need to change.
+4. For experimenting, only touch whichever demo file is active in
+   `index.html` (`blink_demo.js`, `dac-adc-demo.js`, or
+   `adc0_scope_demo.js`). The other eight files — the six framework files
+   plus the two demo files you're not running — normally shouldn't need
+   to change.
 
 ## Troubleshooting (hit while setting this up the first time)
 
@@ -61,7 +63,7 @@ actually working around.
   files was added via "Upload File" instead of "Create File". Upload is
   meant for assets (images, data) and does **not** automatically add the
   file as a `<script>` tag in `index.html`. Fix: check `index.html` for an
-  actual, uncommented `<script src="...">` line for the 5 framework files
+  actual, uncommented `<script src="...">` line for the 6 framework files
   plus whichever demo file you intend to run (plus the Socket.IO CDN tag)
   — otherwise the file shows up in the project but is never actually
   executed.
